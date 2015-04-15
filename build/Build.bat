@@ -29,8 +29,9 @@ SET nuGetFolder=%CD%\..\src\packages\
 ..\src\.nuget\NuGet.exe install ..\src\umbraco.businesslogic\packages.config -OutputDirectory %nuGetFolder%
 ..\src\.nuget\NuGet.exe install ..\src\Umbraco.Core\packages.config -OutputDirectory %nuGetFolder%
 
-ECHO Removing the belle build folder to make sure everything is clean as a whistle
+ECHO Removing the belle build folder and bower_components folder to make sure everything is clean as a whistle
 RD ..\src\Umbraco.Web.UI.Client\build /Q /S
+RD ..\src\Umbraco.Web.UI.Client\bower_components /Q /S
 
 ECHO Removing existing built files to make sure everything is clean as a whistle
 RMDIR /Q /S _BuildOutput
@@ -55,7 +56,6 @@ REN .\_BuildOutput\WebApp\Xslt\Web.config Web.config.transform
 ECHO Packing the NuGet release files
 ..\src\.nuget\NuGet.exe Pack NuSpecs\UmbracoCms.Core.nuspec -Version %version%
 ..\src\.nuget\NuGet.exe Pack NuSpecs\UmbracoCms.nuspec -Version %version%
-..\src\.nuget\NuGet.exe Pack NuSpecs\UmbracoExamine.PDF.nuspec
                         
 IF ERRORLEVEL 1 GOTO :showerror
 

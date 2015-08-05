@@ -203,11 +203,22 @@ namespace Umbraco.Core
         }
 
         /// <summary>
-        /// If the db is configured and there is a database context, but we are not 'configured' , then it means we are upgrading
+        /// If the db is configured, there is a database context and there is an umbraco schema, but we are not 'configured' , then it means we are upgrading
         /// </summary>
 	    public bool IsUpgrading
 	    {
-	        get { return IsConfigured == false && DatabaseContext != null && DatabaseContext.IsDatabaseConfigured; }
+            get
+            {
+                if (IsConfigured == false 
+                    && DatabaseContext != null 
+                    && DatabaseContext.IsDatabaseConfigured)
+                {
+                    var schemaresult = DatabaseContext.ValidateDatabaseSchema();
+                    if (schemaresult.ValidTables.Count > 0) return true;
+                }
+
+                return false;
+            }
 	    }
 
 	    /// <summary>
@@ -222,6 +233,8 @@ namespace Umbraco.Core
         /// </remarks>
         internal string OriginalRequestUrl { get; set; }
 
+	    private bool _versionsDifferenceReported;
+
         /// <summary>
         /// Checks if the version configured matches the assembly version
         /// </summary>
@@ -231,17 +244,19 @@ namespace Umbraco.Core
 			{
 				try
 				{
-					string configStatus = ConfigurationStatus;
-					string currentVersion = UmbracoVersion.Current.ToString(3);
+					var configStatus = ConfigurationStatus;
+					var currentVersion = UmbracoVersion.Current.ToString(3);
+				    var ok = configStatus == currentVersion;
 
-
-					if (currentVersion != configStatus)
+					if (ok == false && _versionsDifferenceReported == false)
 					{
+                        // remember it's been reported so we don't flood the log
+                        // no thread-safety so there may be a few log entries, doesn't matter
+                        _versionsDifferenceReported = true;
                         ProfilingLogger.Logger.Debug<ApplicationContext>("CurrentVersion different from configStatus: '" + currentVersion + "','" + configStatus + "'");
 					}
 						
-
-					return (configStatus == currentVersion);
+					return ok;
 				}
 				catch
 				{

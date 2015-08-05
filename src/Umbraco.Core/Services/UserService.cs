@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using Umbraco.Core.Events;
@@ -212,7 +213,7 @@ namespace Umbraco.Core.Services
                 return user;
             }
         }
-
+        
         /// <summary>
         /// Get an <see cref="IUser"/> by username
         /// </summary>
@@ -223,7 +224,8 @@ namespace Umbraco.Core.Services
             using (var repository = RepositoryFactory.CreateUserRepository(UowProvider.GetUnitOfWork()))
             {
                 var query = Query<IUser>.Builder.Where(x => x.Username.Equals(username));
-                return repository.GetByQuery(query).FirstOrDefault();
+                var user = repository.GetByQuery(query).FirstOrDefault();
+                return user;
             }
         }
 
@@ -348,7 +350,7 @@ namespace Umbraco.Core.Services
             {
                 foreach (var member in entities)
                 {
-                    repository.AddOrUpdate(member);                 
+                    repository.AddOrUpdate(member);
                 }
                 //commit the whole lot in one go
                 uow.Commit();
@@ -554,6 +556,21 @@ namespace Umbraco.Core.Services
             using (var repository = RepositoryFactory.CreateUserRepository(uow))
             {
                 repository.ReplaceUserPermissions(userId, permissions, entityIds);
+            }
+        }
+
+        /// <summary>
+        /// Assigns the same permission set for a single user to any number of entities
+        /// </summary>
+        /// <param name="userId">Id of the user</param>
+        /// <param name="permission"></param>
+        /// <param name="entityIds">Specify the nodes to replace permissions for</param>
+        public void AssignUserPermission(int userId, char permission, params int[] entityIds)
+        {
+            var uow = UowProvider.GetUnitOfWork();
+            using (var repository = RepositoryFactory.CreateUserRepository(uow))
+            {
+                repository.AssignUserPermission(userId, permission, entityIds);
             }
         }
 

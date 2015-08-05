@@ -229,7 +229,7 @@ namespace Umbraco.Core.Persistence.Repositories
         private void RebuildXmlStructuresProcessQuery(Func<IContent, XElement> serializer, IQuery<IContent> query, Transaction tr, int pageSize)
         {
             var pageIndex = 0;
-            var total = int.MinValue;
+            var total = long.MinValue;
             var processed = 0;
             do
             {
@@ -658,7 +658,7 @@ namespace Umbraco.Core.Persistence.Repositories
                 // then we can use that entity. Otherwise if it is not published (which can be the case
                 // because we only store the 'latest' entries in the cache which might not be the published
                 // version)
-                var fromCache = RepositoryCache.RuntimeCache.GetCacheItem<IContent>(GetCacheIdKey<IContent>(dto.NodeId));
+                var fromCache = RuntimeCache.GetCacheItem<IContent>(GetCacheIdKey<IContent>(dto.NodeId));
                 //var fromCache = TryGetFromCache(dto.NodeId);
                 if (fromCache != null && fromCache.Published)
                 {
@@ -754,7 +754,7 @@ namespace Umbraco.Core.Persistence.Repositories
         /// <param name="orderDirection">Direction to order by</param>
         /// <param name="filter">Search text filter</param>
         /// <returns>An Enumerable list of <see cref="IContent"/> objects</returns>
-        public IEnumerable<IContent> GetPagedResultsByQuery(IQuery<IContent> query, int pageIndex, int pageSize, out int totalRecords,
+        public IEnumerable<IContent> GetPagedResultsByQuery(IQuery<IContent> query, long pageIndex, int pageSize, out long totalRecords,
             string orderBy, Direction orderDirection, string filter = "")
         {
 

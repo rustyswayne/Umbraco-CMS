@@ -17,7 +17,7 @@ using GlobalSettings = Umbraco.Core.Configuration.GlobalSettings;
 namespace Umbraco.Tests.Migrations
 {
     [TestFixture]
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
     public class MigrationIssuesTests : TestWithDatabaseBase
     {
         [Test]
@@ -120,10 +120,7 @@ namespace Umbraco.Tests.Migrations
 
                 //pass in explicit migrations
                 new DeleteRedirectUrlTable(migrationContext),
-                new AddRedirectUrlTable(migrationContext),
-                new AddRedirectUrlTable2(migrationContext),
-                new AddRedirectUrlTable3(migrationContext),
-                new AddRedirectUrlTable4(migrationContext)
+                new AddRedirectUrlTable(migrationContext)
             );
 
             var upgraded = migrationRunner.Execute(migrationContext, true);

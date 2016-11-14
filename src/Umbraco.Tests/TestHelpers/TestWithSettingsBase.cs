@@ -1,4 +1,5 @@
 ﻿using NUnit.Framework;
+using Umbraco.Tests.TestHelpers.Stubs;
 using Current = Umbraco.Web.Current;
 
 namespace Umbraco.Tests.TestHelpers
@@ -10,8 +11,7 @@ namespace Umbraco.Tests.TestHelpers
     /// <para>Ensures that SettingsForTests is property resetted before and after each test executes.</para>
     /// <para>Sets a test Umbraco context accessor.</para>
     /// </remarks>
-    [TestFixture]
-    public abstract class TestWithSettingsBase : BaseTestBase
+    public abstract class TestWithSettingsBase : UmbracoTestBase
     {
         public override void SetUp()
         {

@@ -1,7 +1,11 @@
-using System;
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
+using System.Threading;
 using NUnit.Framework;
 using Umbraco.Core.Models;
+using Umbraco.Core.Persistence;
 using Umbraco.Core.Services;
 using Umbraco.Tests.Services;
 using Umbraco.Tests.TestHelpers;
@@ -11,10 +15,12 @@ namespace Umbraco.Tests.Persistence
 {
     // fixme.npoco - what shall we do with those tests?
     //
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
     [TestFixture, Ignore]
-    public class PetaPocoCachesTest : BaseServiceTest
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
+    public class PetaPocoCachesTest : TestWithSomeContentBase
     {
+
+#if DEBUG
         /// <summary>
         /// This tests the peta poco caches
         /// </summary>
@@ -189,5 +195,6 @@ namespace Umbraco.Tests.Persistence
 
             contentService.MoveToRecycleBin(content1);
         }
+#endif
     }
 }

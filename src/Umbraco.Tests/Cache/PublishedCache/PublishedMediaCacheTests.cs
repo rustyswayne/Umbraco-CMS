@@ -16,16 +16,17 @@ using Current = Umbraco.Web.Current;
 
 namespace Umbraco.Tests.Cache.PublishedCache
 {
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
 	[TestFixture]
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
     public class PublishMediaCacheTests : BaseWebTest
 	{
-        protected override void MoreSetUp()
+        protected override void Compose()
         {
-            Container.RegisterCollectionBuilder<UrlSegmentProviderCollectionBuilder>()
-                .Append<DefaultUrlSegmentProvider>();
+            base.Compose();
 
-            base.MoreSetUp();
+            Container.GetInstance<UrlSegmentProviderCollectionBuilder>()
+                .Clear()
+                .Append<DefaultUrlSegmentProvider>();
         }
 
         //NOTE: This is "Without_Examine" too

@@ -15,7 +15,7 @@ using Umbraco.Web.Routing;
 
 namespace Umbraco.Web.PublishedCache.NuCache
 {
-    class ContentCache : PublishedCacheBase, IPublishedContentCache, INavigableData, IDisposable
+    internal class ContentCache : PublishedCacheBase, IPublishedContentCache, INavigableData, IDisposable
     {
         private readonly ContentStore2.Snapshot _snapshot;
         private readonly ICacheProvider _facadeCache;
@@ -199,6 +199,17 @@ namespace Umbraco.Web.PublishedCache.NuCache
         #region Get, Has
 
         public override IPublishedContent GetById(bool preview, int contentId)
+        {
+            var n = _snapshot.Get(contentId);
+            if (n == null) return null;
+
+            // both .Draft and .Published cannot be null at the same time
+            return preview
+                ? n.Draft ?? GetPublishedContentAsPreviewing(n.Published)
+                : n.Published;
+        }
+
+        public override IPublishedContent GetById(bool preview, Guid contentId)
         {
             var n = _snapshot.Get(contentId);
             if (n == null) return null;

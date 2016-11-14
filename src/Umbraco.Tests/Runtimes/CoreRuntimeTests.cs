@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Web.Hosting;
 using LightInject;
 using Moq;
 using NUnit.Framework;
@@ -11,24 +12,22 @@ using Umbraco.Core.Logging;
 using Umbraco.Core.Persistence;
 using Umbraco.Core.Services;
 using Umbraco.Tests.TestHelpers;
+using Umbraco.Tests.TestHelpers.Stubs;
 using UmbracoExamine;
 
 namespace Umbraco.Tests.Runtimes
 {
     [TestFixture]
-    public class CoreRuntimeTests : TestWithSettingsBase
+    public class CoreRuntimeTests
     {
-        public override void SetUp()
+        [SetUp]
+        public void SetUp()
         {
-            base.SetUp();
-
             TestComponent.Reset();
         }
 
-        public override void TearDown()
+        public void TearDown()
         {
-            base.TearDown();
-
             TestComponent.Reset();
         }
 
@@ -70,6 +69,10 @@ namespace Umbraco.Tests.Runtimes
                 //return Mock.Of<ILogger>();
                 return new DebugDiagnosticsLogger();
             }
+
+            // don't register anything against AppDomain
+            protected override void ConfigureUnhandledException(ILogger logger)
+            { }
         }
 
         // test runtime
@@ -90,8 +93,7 @@ namespace Umbraco.Tests.Runtimes
                 container.RegisterSingleton(factory => new ProfilingLogger(factory.GetInstance<ILogger>(), factory.GetInstance<IProfiler>()));
 
                 // must override the database factory
-                container.RegisterSingleton(_ => GetDatabaseFactory()); // fixme painful, is it... singleton? or what?
-                //container.RegisterKnownService(_ => GetDatabaseFactory()); // fixme - would pick the correct LifeTime!
+                container.RegisterSingleton(_ => GetDatabaseFactory());
             }
 
             // must override the database factory
@@ -121,7 +123,7 @@ namespace Umbraco.Tests.Runtimes
 
             public override void Terminate()
             {
-                _mainDom.Stop(false);
+                ((IRegisteredObject) _mainDom).Stop(false);
                 base.Terminate();
             }
 

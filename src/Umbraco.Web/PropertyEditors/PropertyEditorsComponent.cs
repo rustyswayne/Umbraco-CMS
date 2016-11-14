@@ -13,16 +13,13 @@ namespace Umbraco.Web.PropertyEditors
     {
         public void Initialize(IRuntimeState runtime, PropertyEditorCollection propertyEditors, IExamineIndexCollectionAccessor indexCollection)
         {
-            if (runtime.Level != RuntimeLevel.Run) return;
-
             var fileUpload = propertyEditors.OfType<FileUploadPropertyEditor>().FirstOrDefault();
             if (fileUpload != null) Initialize(fileUpload);
 
             var imageCropper = propertyEditors.OfType<ImageCropperPropertyEditor>().FirstOrDefault();
             if (imageCropper != null) Initialize(imageCropper);
 
-            var grid = propertyEditors.OfType<GridPropertyEditor>().FirstOrDefault();
-            if (grid != null) Initialize(grid, indexCollection);
+            // grid/examine moved to ExamineComponent
         }
 
         // as long as these methods are private+static they won't be executed by the boot loader
@@ -30,18 +27,18 @@ namespace Umbraco.Web.PropertyEditors
         private static void Initialize(FileUploadPropertyEditor fileUpload)
         {
             MediaService.Saving += fileUpload.MediaServiceSaving;
-            MediaService.Created += fileUpload.MediaServiceCreating;
+            MediaService.Created += fileUpload.MediaServiceCreated;
             ContentService.Copied += fileUpload.ContentServiceCopied;
 
-            MediaService.Deleted += (sender, args) 
+            MediaService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(fileUpload.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
-            MediaService.EmptiedRecycleBin += (sender, args) 
+            MediaService.EmptiedRecycleBin += (sender, args)
                 => args.Files.AddRange(fileUpload.ServiceEmptiedRecycleBin(args.AllPropertyData));
-            ContentService.Deleted += (sender, args) 
+            ContentService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(fileUpload.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
-            ContentService.EmptiedRecycleBin += (sender, args) 
+            ContentService.EmptiedRecycleBin += (sender, args)
                 => args.Files.AddRange(fileUpload.ServiceEmptiedRecycleBin(args.AllPropertyData));
-            MemberService.Deleted += (sender, args) 
+            MemberService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(fileUpload.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
         }
 
@@ -51,24 +48,16 @@ namespace Umbraco.Web.PropertyEditors
             MediaService.Created += imageCropper.MediaServiceCreated;
             ContentService.Copied += imageCropper.ContentServiceCopied;
 
-            MediaService.Deleted += (sender, args) 
+            MediaService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(imageCropper.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
-            MediaService.EmptiedRecycleBin += (sender, args) 
+            MediaService.EmptiedRecycleBin += (sender, args)
                 => args.Files.AddRange(imageCropper.ServiceEmptiedRecycleBin(args.AllPropertyData));
-            ContentService.Deleted += (sender, args) 
+            ContentService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(imageCropper.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
-            ContentService.EmptiedRecycleBin += (sender, args) 
+            ContentService.EmptiedRecycleBin += (sender, args)
                 => args.Files.AddRange(imageCropper.ServiceEmptiedRecycleBin(args.AllPropertyData));
-            MemberService.Deleted += (sender, args) 
+            MemberService.Deleted += (sender, args)
                 => args.MediaFilesToDelete.AddRange(imageCropper.ServiceDeleted(args.DeletedEntities.Cast<ContentBase>()));
-        }
-
-        private static void Initialize(GridPropertyEditor grid, IExamineIndexCollectionAccessor indexCollection)
-        {
-            var indexes = indexCollection.Indexes;
-            if (indexes == null) return;
-            foreach (var i in indexes.Values.OfType<BaseUmbracoIndexer>())
-                i.DocumentWriting += grid.DocumentWriting;
         }
     }
 }

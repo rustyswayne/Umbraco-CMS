@@ -6,7 +6,6 @@ using System.Threading;
 using Moq;
 using NUnit.Framework;
 using Umbraco.Core.Configuration.UmbracoSettings;
-using Umbraco.Core.DI;
 using Umbraco.Core.IO;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.Membership;
@@ -18,6 +17,9 @@ using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.Services;
 using Umbraco.Tests.TestHelpers;
 using Umbraco.Tests.TestHelpers.Entities;
+using Umbraco.Core.DI;
+using Umbraco.Core.Events;
+using Umbraco.Tests.TestHelpers.Stubs;
 
 namespace Umbraco.Tests.Services
 {
@@ -26,10 +28,9 @@ namespace Umbraco.Tests.Services
     /// This is more of an integration test as it involves multiple layers
     /// as well as configuration.
     /// </summary>
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
     [TestFixture, RequiresSTA]
-    [TestSetup.FacadeService(EnableRepositoryEvents = true)]
-    public class ContentServiceTests : BaseServiceTest
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest, FacadeServiceRepositoryEvents = true)]
+    public class ContentServiceTests : TestWithSomeContentBase
     {
         //TODO Add test to verify there is only ONE newest document/content in cmsDocument table after updating.
         //TODO Add test to delete specific version (with and without deleting prior versions) and versions by date.
@@ -39,7 +40,6 @@ namespace Umbraco.Tests.Services
             base.Compose();
 
             // fixme - do it differently
-            Container.RegisterCollectionBuilder<PropertyEditorCollectionBuilder>();
             Container.Register(factory => factory.GetInstance<ServiceContext>().TextService);
         }
 
@@ -62,6 +62,49 @@ namespace Umbraco.Tests.Services
 
             // Assert
             Assert.IsTrue(contentService.PublishWithStatus(content).Success);
+        }
+
+        [Test]
+        public void Get_Top_Version_Ids()
+        {
+            // Arrange
+            var contentService = ServiceContext.ContentService;
+
+            // Act
+            var content = contentService.CreateContentWithIdentity("Test", -1, "umbTextpage", 0);
+            for (var i = 0; i < 20; i++)
+            {
+                content.SetValue("bodyText", "hello world " + Guid.NewGuid());
+                contentService.SaveAndPublishWithStatus(content);
+            }
+
+            // Assert
+            var allVersions = contentService.GetVersionIds(content.Id, int.MaxValue);
+            Assert.AreEqual(20, allVersions.Count());
+
+            var topVersions = contentService.GetVersionIds(content.Id, 4);
+            Assert.AreEqual(4, topVersions.Count());
+        }
+
+        [Test]
+        public void Get_By_Ids_Sorted()
+        {
+            // Arrange
+            var contentService = ServiceContext.ContentService;
+
+            // Act
+            var results = new List<IContent>();
+            for (var i = 0; i < 20; i++)
+            {
+                results.Add(contentService.CreateContentWithIdentity("Test", -1, "umbTextpage", 0));
+            }
+
+            var sortedGet = contentService.GetByIds(new[] {results[10].Id, results[5].Id, results[12].Id}).ToArray();
+
+            // Assert
+            Assert.AreEqual(sortedGet[0].Id, results[10].Id);
+            Assert.AreEqual(sortedGet[1].Id, results[5].Id);
+            Assert.AreEqual(sortedGet[2].Id, results[12].Id);
         }
 
         [Test]
@@ -894,6 +937,46 @@ namespace Umbraco.Tests.Services
             // Assert
             Assert.That(published, Is.True);
             Assert.That(content.Published, Is.True);
+        }
+
+        [Test]
+        public void Can_Publish_Content_WithEvents()
+        {
+            ContentService.Publishing += ContentServiceOnPublishing;
+
+            // tests that during 'publishing' event, what we get from the repo is the 'old' content,
+            // because 'publishing' fires before the 'saved' event ie before the content is actually
+            // saved
+
+            try
+            {
+                var contentService = ServiceContext.ContentService;
+                var content = contentService.GetById(NodeDto.NodeIdSeed + 1);
+                Assert.AreEqual("Home", content.Name);
+
+                content.Name = "foo";
+                var published = contentService.Publish(content, 0);
+
+                Assert.That(published, Is.True);
+                Assert.That(content.Published, Is.True);
+
+                var e = ServiceContext.ContentService.GetById(content.Id);
+                Assert.AreEqual("foo", e.Name);
+            }
+            finally
+            {
+                ContentService.Publishing -= ContentServiceOnPublishing;
+            }
+        }
+
+        private void ContentServiceOnPublishing(IContentService sender, PublishEventArgs<IContent> args)
+        {
+            Assert.AreEqual(1, args.PublishedEntities.Count());
+            var entity = args.PublishedEntities.First();
+            Assert.AreEqual("foo", entity.Name);
+
+            var e = ServiceContext.ContentService.GetById(entity.Id);
+            Assert.AreEqual("Home", e.Name);
         }
 
         [Test]

@@ -13,12 +13,13 @@ using Umbraco.Core.Models.Rdbms;
 using Umbraco.Core.Persistence.Repositories;
 using Umbraco.Tests.TestHelpers;
 using Umbraco.Tests.TestHelpers.Entities;
+using Umbraco.Tests.TestHelpers.Stubs;
 using Current = Umbraco.Web.Current;
 
 namespace Umbraco.Tests.Services
 {
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
     [TestFixture, NUnit.Framework.Ignore]
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
     public class ContentServicePerformanceTest : TestWithDatabaseBase
     {
         public override void SetUp()
@@ -27,10 +28,10 @@ namespace Umbraco.Tests.Services
             CreateTestData();
         }
 
-        protected override void MoreSetUp()
+        protected override void Compose()
         {
+            base.Compose();
             Container.Register<IProfiler, TestProfiler>();
-            base.MoreSetUp();
         }
 
         [Test]
@@ -50,8 +51,8 @@ namespace Umbraco.Tests.Services
         public void Retrieving_All_Content_In_Site()
         {
             //NOTE: Doing this the old 1 by 1 way and based on the results of the ContentServicePerformanceTest.Retrieving_All_Content_In_Site
-            // the old way takes 143795ms, the new above way takes: 
-            // 14249ms 
+            // the old way takes 143795ms, the new above way takes:
+            // 14249ms
             //
             // ... NOPE, made some new changes, it is now....
             // 5290ms  !!!!!!

@@ -13,11 +13,9 @@ using Umbraco.Tests.TestHelpers.Entities;
 
 namespace Umbraco.Tests.Services
 {
-
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
     [TestFixture, RequiresSTA]
-    [TestSetup.FacadeService(EnableRepositoryEvents = true)]
-    public class ContentTypeServiceTests : BaseServiceTest
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest, FacadeServiceRepositoryEvents = true)]
+    public class ContentTypeServiceTests : TestWithSomeContentBase
     {
         [Test]
         public void Deleting_PropertyType_Removes_The_Property_From_Content()
@@ -261,6 +259,35 @@ namespace Umbraco.Tests.Services
             var success = category.AddContentType(component);
 
             Assert.That(success, Is.False);
+        }
+
+        [Test]
+        public void Can_Delete_Parent_ContentType_When_Child_Has_Content()
+        {
+            var cts = ServiceContext.ContentTypeService;
+            var contentType = MockedContentTypes.CreateSimpleContentType("page", "Page", null, true);
+            cts.Save(contentType);
+            var childContentType = MockedContentTypes.CreateSimpleContentType("childPage", "Child Page", contentType, true, "Child Content");
+            cts.Save(childContentType);
+            var cs = ServiceContext.ContentService;
+            var content = cs.CreateContent("Page 1", -1, childContentType.Alias);
+            cs.Save(content);
+
+            cts.Delete(contentType);
+
+            Assert.IsNotNull(content.Id);
+            Assert.AreNotEqual(0, content.Id);
+            Assert.IsNotNull(childContentType.Id);
+            Assert.AreNotEqual(0, childContentType.Id);
+            Assert.IsNotNull(contentType.Id);
+            Assert.AreNotEqual(0, contentType.Id);
+            var deletedContent = cs.GetById(content.Id);
+            var deletedChildContentType = cts.Get(childContentType.Id);
+            var deletedContentType = cts.Get(contentType.Id);
+            
+            Assert.IsNull(deletedChildContentType);
+            Assert.IsNull(deletedContent);
+            Assert.IsNull(deletedContentType);
         }
 
         [Test]

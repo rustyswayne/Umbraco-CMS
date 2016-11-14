@@ -37,18 +37,6 @@ namespace Umbraco.Core.IO
             throw new ArgumentException("Retries must be greater than zero");
         }
 
-        public static long GetSize(this IFileSystem fs, string path)
-        {
-            using (var file = fs.OpenFile(path))
-            {
-                using (var sr = new StreamReader(file))
-                {
-                    var str = sr.ReadToEnd();
-                    return str.Length;
-                }
-            }
-        }
-
         public static void CopyFile(this IFileSystem fs, string path, string newPath)
         {
             using (var stream = fs.OpenFile(path))

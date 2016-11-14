@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Xml.XPath;
-using Umbraco.Core;
 using Umbraco.Core.Cache;
-using Umbraco.Core.Models;
 using Umbraco.Core.Models.PublishedContent;
 using Umbraco.Core.Xml;
 using Umbraco.Core.Xml.XPath;
@@ -12,7 +10,7 @@ using Umbraco.Web.PublishedCache.NuCache.Navigable;
 
 namespace Umbraco.Web.PublishedCache.NuCache
 {
-    class MediaCache : PublishedCacheBase, IPublishedMediaCache, INavigableData, IDisposable
+    internal class MediaCache : PublishedCacheBase, IPublishedMediaCache, INavigableData, IDisposable
     {
         private readonly ContentStore2.Snapshot _snapshot;
         private readonly ICacheProvider _facadeCache;
@@ -33,6 +31,12 @@ namespace Umbraco.Web.PublishedCache.NuCache
         #region Get, Has
 
         public override IPublishedContent GetById(bool preview, int contentId)
+        {
+            var n = _snapshot.Get(contentId);
+            return n?.Published;
+        }
+
+        public override IPublishedContent GetById(bool preview, Guid contentId)
         {
             var n = _snapshot.Get(contentId);
             return n?.Published;

@@ -5,11 +5,13 @@ using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Web;
+using LightInject;
 using Moq;
 using NUnit.Framework;
-using Umbraco.Core;
 using Umbraco.Core.Cache;
-using Umbraco.Core.Exceptions;
+using Umbraco.Core.Configuration.UmbracoSettings;
+using Umbraco.Core.DI;
+using Umbraco.Core.IO;
 using Umbraco.Core.Logging;
 using Umbraco.Core.Models;
 using Umbraco.Core.Models.EntityBase;
@@ -18,23 +20,29 @@ using Umbraco.Core.Serialization;
 using Umbraco.Core.Services;
 using Umbraco.Tests.TestHelpers;
 using Umbraco.Tests.TestHelpers.Entities;
+using Umbraco.Tests.TestHelpers.Stubs;
 
 namespace Umbraco.Tests.Models
 {
     [TestFixture]
     public class ContentTests : TestWithSettingsBase
     {
-        [SetUp]
-        public void Init()
+        public override void SetUp()
         {
+            base.SetUp();
+
             var config = SettingsForTests.GetDefault();
             SettingsForTests.ConfigureSettings(config);
         }
 
-        [TearDown]
-        public void Dispose()
+        protected override void Compose()
         {
+            base.Compose();
 
+            Container.Register(_ => Mock.Of<ILogger>());
+            Container.Register<FileSystems>();
+            Container.Register(_ => Mock.Of<IDataTypeService>());
+            Container.Register(_ => Mock.Of<IContentSection>());
         }
 
         [Test]
@@ -137,7 +145,7 @@ namespace Umbraco.Tests.Models
             var dataTypeService = Mock.Of<IDataTypeService>();
 
             // Assert
-            content.SetValue("title", postedFileMock.Object, dataTypeService);
+            content.SetValue("title", postedFileMock.Object);
 
             // Assert
             Assert.That(content.Properties.Any(), Is.True);

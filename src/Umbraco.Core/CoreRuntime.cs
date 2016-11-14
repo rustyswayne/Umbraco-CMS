@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Configuration;
 using System.Threading;
+using System.Web;
 using LightInject;
 using Semver;
 using Umbraco.Core.Cache;
@@ -78,6 +79,9 @@ namespace Umbraco.Core
                 "Booted.",
                 "Boot failed."))
             {
+                // throws if not full-trust
+                new AspNetHostingPermission(AspNetHostingPermissionLevel.Unrestricted).Demand();
+
                 try
                 {
                     Logger.Debug<CoreRuntime>($"Runtime: {GetType().FullName}");
@@ -203,8 +207,8 @@ namespace Umbraco.Core
             // register persistence mappers - required by database factory so needs to be done here
             // means the only place the collection can be modified is in a runtime - afterwards it 
             // has been frozen and it is too late
-            container.RegisterCollectionBuilder<MapperCollectionBuilder>()
-                .Add(f => f.GetInstance<PluginManager>().ResolveAssignedMapperTypes());
+            var mapperCollectionBuilder = container.RegisterCollectionBuilder<MapperCollectionBuilder>();
+            ComposeMapperCollection(mapperCollectionBuilder);
 
             // register database factory
             // will be initialized with syntax providers and a logger, and will try to configure
@@ -218,6 +222,40 @@ namespace Umbraco.Core
 
             // register MainDom
             container.RegisterSingleton<MainDom>();
+        }
+
+        protected virtual void ComposeMapperCollection(MapperCollectionBuilder builder)
+        {
+            // ResolveTypesWithAttribute<BaseMapper, MapperForAttribute>()
+            builder
+                .Add<AccessMapper>()
+                .Add<AuditItemMapper>()
+                .Add<ContentMapper>()
+                .Add<ContentTypeMapper>()
+                .Add<DataTypeDefinitionMapper>()
+                .Add<DictionaryMapper>()
+                .Add<DictionaryTranslationMapper>()
+                .Add<DomainMapper>()
+                .Add<LanguageMapper>()
+                .Add<MacroMapper>()
+                .Add<MediaMapper>()
+                .Add<MediaTypeMapper>()
+                .Add<MemberGroupMapper>()
+                .Add<MemberMapper>()
+                .Add<MemberTypeMapper>()
+                .Add<MigrationEntryMapper>()
+                .Add<PropertyGroupMapper>()
+                .Add<PropertyMapper>()
+                .Add<PropertyTypeMapper>()
+                .Add<RelationMapper>()
+                .Add<ServerRegistrationMapper>()
+                .Add<TagMapper>()
+                .Add<TaskTypeMapper>()
+                .Add<TemplateMapper>()
+                .Add<UmbracoEntityMapper>()
+                .Add<UserMapper>()
+                .Add<ExternalLoginMapper>()
+                .Add<UserTypeMapper>();
         }
 
         private void SetRuntimeStateLevel(RuntimeState runtimeState, IDatabaseFactory databaseFactory, ILogger logger)

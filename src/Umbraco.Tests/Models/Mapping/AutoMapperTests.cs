@@ -14,8 +14,8 @@ using Umbraco.Core.DI;
 
 namespace Umbraco.Tests.Models.Mapping
 {
-    [RequiresAutoMapperMappings]
     [TestFixture]
+    [UmbracoTest(AutoMapper = true)]
     public class AutoMapperTests : TestWithApplicationBase
     {
         protected override void Compose()
@@ -28,7 +28,8 @@ namespace Umbraco.Tests.Models.Mapping
             Container.Register(_ => manifestBuilder);
 
             Func<IEnumerable<Type>> typeListProducerList = Enumerable.Empty<Type>;
-            Container.RegisterCollectionBuilder<PropertyEditorCollectionBuilder>()
+            Container.GetInstance<PropertyEditorCollectionBuilder>()
+                .Clear()
                 .Add(typeListProducerList);
         }
 

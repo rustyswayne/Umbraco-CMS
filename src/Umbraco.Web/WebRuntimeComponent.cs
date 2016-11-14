@@ -10,12 +10,11 @@ using System.Web.Http.Dispatcher;
 using System.Web.Mvc;
 using System.Web.Routing;
 using ClientDependency.Core.Config;
-using Examine;
 using LightInject;
+using Microsoft.AspNet.SignalR;
 using Umbraco.Core;
 using Umbraco.Core.Components;
 using Umbraco.Core.Configuration;
-using Umbraco.Core.Configuration.UmbracoSettings;
 using Umbraco.Core.DI;
 using Umbraco.Core.Dictionary;
 using Umbraco.Core.Events;
@@ -26,7 +25,7 @@ using Umbraco.Core.Profiling;
 using Umbraco.Core.PropertyEditors;
 using Umbraco.Core.PropertyEditors.ValueConverters;
 using Umbraco.Core.Services;
-using Umbraco.Web.DependencyInjection;
+using Umbraco.Web.DI;
 using Umbraco.Web.Dictionary;
 using Umbraco.Web.Editors;
 using Umbraco.Web.HealthCheck;
@@ -38,6 +37,7 @@ using Umbraco.Web.PublishedCache;
 using Umbraco.Web.Routing;
 using Umbraco.Web.Security;
 using Umbraco.Web.Services;
+using Umbraco.Web.SignalR;
 using Umbraco.Web.UI.JavaScript;
 using Umbraco.Web.WebApi;
 using Umbraco.Web._Legacy.Actions;
@@ -173,6 +173,9 @@ namespace Umbraco.Web
             // register facade router
             composition.Container.Register<FacadeRouter>();
             composition.Container.Register(_ => UmbracoConfig.For.UmbracoSettings().WebRouting);
+
+            // register preview SignalR hub
+            composition.Container.Register(_ => GlobalHost.ConnectionManager.GetHubContext<PreviewHub>(), new PerContainerLifetime());
         }
 
         internal void Initialize(
@@ -235,26 +238,8 @@ namespace Umbraco.Web
                 UmbracoConfig.For.UmbracoSettings(),
                 urlProviders);
 
-            // rebuild any empty indexes
-            // do we want to make this optional? otherwise the only way to disable this on startup
-            // would be to implement a custom WebBootManager and override this method
-            // fixme - move to its own component! and then it could be disabled >> ExamineComponent
-            // fixme - configuration?
-            if (runtime.Level == RuntimeLevel.Run)
-                RebuildIndexes(true);
-
             // ensure WebAPI is initialized, after everything
             GlobalConfiguration.Configuration.EnsureInitialized();
-        }
-
-        // fixme - this should move to something else, we should not depend on Examine here!
-        private static void RebuildIndexes(bool onlyEmptyIndexes)
-        {
-            var indexers = (IEnumerable<KeyValuePair<string, IExamineIndexer>>)ExamineManager.Instance.IndexProviders;
-            if (onlyEmptyIndexes)
-                indexers = indexers.Where(x => x.Value.IsIndexNew());
-            foreach (var indexer in indexers)
-                indexer.Value.RebuildIndex();
         }
 
         private static void ConfigureGlobalFilters()

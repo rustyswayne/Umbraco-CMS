@@ -25,19 +25,20 @@ namespace Umbraco.Tests.PublishedContent
     /// <summary>
     /// Tests the typed extension methods on IPublishedContent using the DefaultPublishedMediaStore
     /// </summary>
-    [DatabaseTestBehavior(DatabaseBehavior.NewDbFileAndSchemaPerTest)]
     [TestFixture, RequiresSTA]
+    [UmbracoTest(Database = UmbracoTestOptions.Database.NewSchemaPerTest)]
     public class PublishedMediaTests : PublishedContentTestBase
     {
         /// <summary>
         /// sets up resolvers before resolution is frozen
         /// </summary>
-        protected override void MoreSetUp()
+        protected override void Compose()
         {
-            Container.RegisterCollectionBuilder<UrlSegmentProviderCollectionBuilder>()
-                .Append<DefaultUrlSegmentProvider>();
+            base.Compose();
 
-            base.MoreSetUp();
+            Container.GetInstance<UrlSegmentProviderCollectionBuilder>()
+                .Clear()
+                .Append<DefaultUrlSegmentProvider>();
         }
 
         /// <summary>

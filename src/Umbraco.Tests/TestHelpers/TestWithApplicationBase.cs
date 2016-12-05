@@ -16,6 +16,7 @@ using Umbraco.Core.Persistence.Mappers;
 using Umbraco.Core.Events;
 using Umbraco.Core.Manifest;
 using Umbraco.Core.Models.PublishedContent;
+using Umbraco.Core.Persistence.Querying;
 using Umbraco.Core.Plugins;
 using Umbraco.Core.Services;
 using Umbraco.Tests.TestHelpers.Stubs;
@@ -47,7 +48,7 @@ namespace Umbraco.Tests.TestHelpers
 
         protected virtual ISqlSyntaxProvider SqlSyntax => new SqlCeSyntaxProvider();
 
-        protected IMapperCollection Mappers => Container.GetInstance<IMapperCollection>();
+        protected IQueryFactory QueryFactory => Container.GetInstance<IQueryFactory>();
 
         /// <summary>
         /// Gets a value indicating whether the plugin manager should be resetted before and after each test.
@@ -116,11 +117,13 @@ namespace Umbraco.Tests.TestHelpers
 
             Container.RegisterSingleton<IEventMessagesFactory>(_ => new TransientEventMessagesFactory());
             Container.RegisterSingleton<IUmbracoDatabaseAccessor, TestUmbracoDatabaseAccessor>();
+            var sqlSyntaxProviders = TestObjects.GetDefaultSqlSyntaxProviders(Logger);
+            Container.RegisterSingleton<ISqlSyntaxProvider>(_ => sqlSyntaxProviders.OfType<SqlCeSyntaxProvider>().First());
             Container.RegisterSingleton<IDatabaseFactory>(f => new DefaultDatabaseFactory(
                 Core.Configuration.GlobalSettings.UmbracoConnectionName,
-                TestObjects.GetDefaultSqlSyntaxProviders(Logger),
+                sqlSyntaxProviders,
                 Logger, f.GetInstance<IUmbracoDatabaseAccessor>(),
-                Mock.Of<IMapperCollection>()));
+                Mock.Of<IQueryFactory>()));
             Container.RegisterSingleton(f => new DatabaseContext(
                 f.GetInstance<IDatabaseFactory>(),
                 Logger,
